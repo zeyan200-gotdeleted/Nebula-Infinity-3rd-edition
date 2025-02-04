@@ -1,0 +1,104 @@
+-- @ | Services
+
+local Services = shared["Nebula Infinity V 3.0"].Services
+
+-- @ | Variables
+
+local Callbacks, Methods, Debounces = {}, {}, {}
+local Meta = setmetatable({}, Callbacks)
+
+Callbacks.__index, Methods.__index = Callbacks, Methods
+
+-- @ | Methods
+
+
+
+-- @ | Callbacks
+
+function Callbacks:ObtainPlayers( sender : Player , keyword : string )
+
+	local playerList = {}
+
+	if keyword == "me" then
+		table.insert( playerList, sender)
+	end
+
+	if keyword == "other" or keyword == "others" then
+		for _, plr in Services.Players:GetPlayers() do
+			if table.find( playerList, plr) or plr == sender then continue end
+
+			table.insert( playerList, plr)
+		end
+	end
+
+	if keyword == "all" or keyword == "everyone" then
+		for _, plr in Services.Players:GetPlayers() do
+			if table.find( playerList, plr) then continue end
+
+			table.insert( playerList, plr) end
+	end
+
+	if keyword == "random" then
+		for _, plr in Services.Players:GetPlayers() do 
+			if math.random(0, 1) == 1 then end
+
+			if table.find( playerList, plr) then continue end 
+
+			table.insert( playerList, plr)
+		end
+
+	end
+
+	if keyword == "friends" or keyword == "nonfriends" then
+		for _, target in Services.Players:GetPlayers() do
+			if target == sender then continue end
+
+			if keyword == "friends" and target:IsFriendsWith(sender.UserId) then
+				table.insert( playerList, target)
+			elseif keyword == "nonfriends" and not target:IsFriendsWith(sender.UserId) then 
+				table.insert( playerList, target)
+			end
+		end
+	end
+
+	if keyword == "premium" or keyword == "nonpremium" then
+		for _, target in Services.Players:GetPlayers() do
+			if keyword == "premium" and target.MembershipType == Enum.MembershipType.Premium then
+				table.insert( playerList, target)
+			elseif keyword == "nonpremium" and target.MembershipType ~= Enum.MembershipType.Premium then 
+				table.insert( playerList, target)
+			end
+		end
+	end
+
+
+	if not keyword then table.insert( playerList, sender ) return playerList end
+
+	for _, plr in Services.Players:GetPlayers() do
+		if string.lower(plr.Name) == keyword or string.lower(plr.Name):find(keyword) or string.lower(plr.DisplayName) == keyword or string.lower(plr.DisplayName):find(keyword) then
+			table.insert( playerList, plr )
+		end
+	end
+
+	if #playerList == 0 then table.insert( playerList, sender ) end
+
+	return playerList
+end	
+
+function Callbacks:IsAKeyWord( keyword )
+	local Keywords = {
+		"me",
+		"all",
+		"random",
+		"others",
+		"everyone",
+		"friends",
+		"nonfriends",
+		"premium",
+		"nonpremium"
+	}
+
+	return table.find(Keywords, keyword) or false
+end
+
+return Meta
