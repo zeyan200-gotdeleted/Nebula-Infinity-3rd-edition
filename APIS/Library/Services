@@ -1,0 +1,41 @@
+-- @ | Services
+
+local RunService = game:GetService("RunService")
+
+-- @ | Return
+
+return {
+	
+	["DataStoreService"] = RunService:IsServer() and game:GetService("DataStoreService"),
+	["Debris"] = game:GetService("Debris"),
+	
+	["GroupService"] = game:GetService("GroupService"),
+	
+	["HttpService"] = RunService:IsServer() and game:GetService("HttpService"),
+	
+	["Lighting"] = game:GetService("Lighting"),
+	
+	["MarketplaceService"] = game:GetService("MarketplaceService"),
+	["MaterialService"] = game:GetService("MaterialService"),
+	
+	["Players"] = game:GetService("Players"),
+	
+	["ReplicatedFirst"] = game:GetService("ReplicatedFirst"),
+	["ReplicatedStorage"] = game:GetService("ReplicatedStorage"),
+	["RunService"] = game:GetService("RunService"),
+	
+	["ServerScriptService"] = RunService:IsServer() and game:GetService("ServerScriptService"),
+	["ServerStorage"] = RunService:IsServer() and game:GetService("ServerStorage"),
+	["SoundService"] = game:GetService("SoundService"),
+	["StarterGui"] = RunService:IsClient() and game:FindFirstChild("StarterGui"),
+	["StarterPack"] = game:GetService("StarterPack"),
+	["StarterPlayer"] = game:GetService("StarterPlayer"),
+	
+	["Teams"] = game:GetService("Teams"),
+	["TeleportService"] = RunService:IsServer() and game:GetService("TeleportService"),
+	["Terrain"] = game:GetService("Terrain"),
+	["TextChatService"] = game:GetService("TextChatService"),
+	
+	["UserInputService"] = RunService:IsClient() and game:FindFirstChild("UserInputService"),
+	["VoiceChatService"] = game:GetService("VoiceChatService"),
+}
