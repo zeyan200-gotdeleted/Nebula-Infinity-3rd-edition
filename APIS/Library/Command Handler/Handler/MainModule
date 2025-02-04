@@ -1,0 +1,238 @@
+-- @ | Services
+
+local Services = shared["Nebula Infinity V 3.0"].Services
+
+-- @ | Variables
+
+local Callbacks, Methods, LoopStorage, Debounces = {}, {}, {}, {}
+local Meta = setmetatable({}, Callbacks)
+
+Callbacks.__index, Methods.__index = Callbacks, Methods
+
+-- @ | Methods
+script.Parent["CommandList | Client"].Parent = shared["Nebula Infinity V 3.0"].Client
+
+function Methods:ValidateCommand( commandName : string )
+	local Client, CustomClient, Server, CustomServer =  require(shared["Nebula Infinity V 3.0"].Client["CommandList | Client"]), require(shared["Nebula Infinity V 3.0"].Client["Custom Command List | Client"]), require(script.Parent["CommandList | Server"]), require(script.Parent["Custom Command List | Server"]) -- Command lists
+	local foundCommand
+
+	warn(#Server + #Client)
+
+	-- Find the specified command
+
+	for _, clientCommand in pairs(Client) do
+		if clientCommand.Name:lower() == commandName:lower() or table.find(clientCommand.Aliases, commandName:lower()) then
+
+			foundCommand = clientCommand
+
+			return clientCommand
+		end
+	end	
+
+	for _, serverCommand in pairs(Server) do
+		if serverCommand.Name:lower() == commandName:lower() or table.find(serverCommand.Aliases, commandName:lower()) then
+
+			foundCommand = serverCommand
+
+			return serverCommand
+		end
+	end	
+
+	for _, CUSTOMserverCommand in pairs(require(script.Parent["Custom Command List | Server"])) do
+		if CUSTOMserverCommand.Name:lower() == commandName:lower()  or table.find(CUSTOMserverCommand.Aliases, commandName:lower()) then
+
+			foundCommand = CUSTOMserverCommand
+
+			return CUSTOMserverCommand
+		end
+	end	
+
+	return foundCommand
+end
+
+function Methods:Chatted(Player: Player, Message: string)
+	local Prefix = Methods:ObtainPrefix(Player)
+
+	if Prefix then
+
+		-- If the player has the prefix continue
+
+		-- If the message has the prefix in it remove it.
+
+		if Message:find(Prefix) then
+			local command = Message:gsub(Prefix, ""):lower():split(" ")[1]
+			local validLoop = string.find(command:lower():split()[1], "loop")
+			local validUnLoop = string.find(command:lower():split()[1], "unloop")
+
+			-- Is the command looped?
+
+			if validLoop or validUnLoop then
+				local final 
+
+				if validLoop and not validUnLoop then 
+					final = command:gsub("loop", "")
+				elseif validLoop and validUnLoop then 
+					final = command:gsub("unloop", "")
+				end
+
+				command = Methods:ValidateCommand(final) -- Does the command exist?
+			else
+				command = Methods:ValidateCommand(command) -- Does the command exist?
+			end
+
+			if not command then error("Command doesn't exist") return end 
+
+			shared["Nebula Infinity V 3.0"].Client.EventStorage.newLog:Fire(Player, "Command Usage", true, { User = Player, Command = command.Name, Message = Message }) -- Log the command usage for the logs page.
+
+			if command.RunContext == "Client" then
+				-- If the RunContext is client then fire the function.
+
+				local args = Message:gsub(Prefix, ""):lower():split(" ")
+				table.remove(args, 1)
+
+				local Formatter = require(script.Format.MainModule)  
+				local Players = Formatter:ObtainPlayers(Player, args[1])
+
+				for _, foundPlayer in pairs(Players) do
+					game:GetService("ReplicatedStorage"):WaitForChild("Nebula Infinity | Client"):FindFirstChild("FunctionStorage"):FindFirstChild("ClientCommands").Main:InvokeClient(foundPlayer, Message)
+				end
+
+			elseif command.RunContext == "Server" then
+				-- If the RunContext is Server then run all the functions
+
+				local Formatter = require(script.Format.MainModule)  
+
+				if not table.find(command.Rank, Player:GetAttribute("RankId")) then 
+					shared["Nebula Infinity V 3.0"].Client.EventStorage.Notification:FireClient(Player, `You aren't permitted to run the "{command.Name}" command.`)  
+					error(`{Player.Name} isn't permitted to run the {command.Name} command.`) 
+					return 
+				end
+
+				local args = Message:gsub(Prefix, ""):lower():split(" ")
+				table.remove(args, 1)
+
+				local Players = Formatter:ObtainPlayers(Player, args[1])
+				local Subjects = Formatter:ObtainPlayers(Player, args[2])
+
+				for i, foundPlayer in pairs(Players) do
+					
+					if Player:GetAttribute("RankId") <= foundPlayer then
+						warn(`{Player.Name} does not have permission to run {command.Name} on {foundPlayer.Name}` ) 
+
+						continue 
+					end
+
+					if table.find(command.Arguments, "Player") then
+						args[1] = foundPlayer
+					end
+
+					if Subjects and table.find(command.Arguments, "Subject") then 
+						args[table.find(command.Arguments, "Subject")] = Subjects[i or 1]
+					end
+
+					command.Function(foundPlayer, args)
+				end
+
+				-- Loopable commands
+
+				if command.Loopable and not validUnLoop and validLoop then
+					LoopStorage[`{command.Name} - {Player.UserId}`] = coroutine.create(function()
+						local LoopPlayers = Players
+
+						while task.wait(1) do
+							for _, foundPlayer in pairs(LoopPlayers) do
+								command.Function(foundPlayer, args)
+							end
+						end
+					end)
+
+					coroutine.resume(LoopStorage[`{command.Name} - {Player.UserId}`])
+
+				elseif validUnLoop and validLoop then
+					coroutine.close(LoopStorage[`{command.Name} - {Player.UserId}`])
+				end
+
+			else
+				error(`{command.Name}'s Run Context has been set incorrectly.`)
+			end
+		end
+	end
+end
+
+function Methods:ObtainPrefix( Player : Player )
+	local Prefix = shared["Nebula Infinity V 3.0"].Client.PlayerInfo[Player.Name]:GetAttribute("Prefix") or "!"
+
+	Services.DataStoreService:GetDataStore("Nebula Infinity | Third Edition Prefixes"):UpdateAsync( "Prefixs", function( pastData )
+		if Prefix ~= pastData[Player.UserId] then
+			return
+		end
+	end)
+
+	-- Return prefix.
+
+	return Prefix
+end
+
+-- @ | Callbacks
+
+
+
+-- @ | RBX Signals
+
+Services.Players.PlayerAdded:Connect(function( Player : Player ) Player.Chatted:Connect(function( msg ) Methods:Chatted( Player, msg ) end) end) -- New Players
+
+local ExistingPlayer = coroutine.wrap(function( )
+	for _, Player in pairs(Services.Players:GetPlayers()) do
+		Player.Chatted:Connect(function( msg )
+			Methods:Chatted( Player, msg ) -- Existing Player
+		end)
+	end
+end)( )
+
+local PreFunctions = coroutine.wrap(function( )
+
+	for _, command in pairs(require(script.Parent["CommandList | Server"])) do
+
+	--	if table.find(command, "PreFunction") then
+
+			-- All the servers pre functions will run.
+
+pcall(function()
+			command.PreFunction()
+end)
+
+--end
+	end
+
+end)()
+
+shared["Nebula Infinity V 3.0"].Client.FunctionStorage:WaitForChild("GetCommands").Main.OnServerInvoke = function()
+	local Client, CustomClient, Server, CustomServer =  require(shared["Nebula Infinity V 3.0"].Client["CommandList | Client"]), require(shared["Nebula Infinity V 3.0"].Client["Custom Command List | Client"]), require(script.Parent["CommandList | Server"]), require(script.Parent["Custom Command List | Server"])
+
+	-- Return all the existing commands, including custom ones.
+
+	local allCommands = {Client, CustomClient, Server, CustomServer}
+
+	return allCommands
+end
+
+shared["Nebula Infinity V 3.0"].Client.FunctionStorage.RunCommand.Main.OnServerInvoke = function( player, text )
+	local prefix = Methods:ObtainPrefix( player )
+
+	if not text:find(prefix) then text = prefix .. text end
+
+	Methods:Chatted( player, text )
+end		
+
+-- Change file parents.
+
+shared["Nebula Infinity V 3.0"].File["Command Handler"]["CommandList | Client"].Name = "Custom Command List | Client"
+
+shared["Nebula Infinity V 3.0"].File["Command Handler"]["Custom Command List | Client"].Parent = shared["Nebula Infinity V 3.0"].Client
+
+shared["Nebula Infinity V 3.0"].File["Command Handler"]["CommandList | Server"].Name = "Custom Command List | Server"
+
+shared["Nebula Infinity V 3.0"].File["Command Handler"]["Custom Command List | Server"].Parent = script.Parent
+
+
+return Meta
