@@ -260,5 +260,30 @@ return {
 		end,
 
 	},
-	
+
+	{
+		Name = "Credits",
+		Description = "Loads the Credits popup.",
+
+		Aliases = {  },
+
+		Rank = {1, 2, 3, 4},
+		RunContext = "Client",
+		Loopable = false,
+
+		Arguments = { },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function( speaker : Player, args : any ) 
+			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			shared["Nebula Infinity V 3.0"].Events.Popup:Fire("Credits")
+
+		end,
+
+	},
+
 }
