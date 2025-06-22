@@ -6,6 +6,7 @@ local Services = shared["Nebula Infinity V 3.0"].Services
 
 local Callbacks, Methods, PrefixStorage , Debounces = {}, {}, {}, {}
 local Meta = setmetatable({}, Callbacks)
+local CustomRanks = require(shared["Nebula Infinity V 3.0"].File.Ranks.Customs)
 
 Callbacks.__index, Methods.__index = Callbacks, Methods
 
@@ -65,7 +66,13 @@ end
 
 function Callbacks:RankUserAsync( player : Player, rankName : rankName )
 	local Preset = require(script["Pre-Set"])
-
+warn(Preset)
+	for i, v in pairs(CustomRanks) do
+		Preset[v.Name] = v
+	end
+	
+	warn(Preset)
+	
 	if Preset[rankName] then
 
 		Preset = Preset[rankName]
@@ -141,7 +148,7 @@ Services.Players.PlayerRemoving:Connect(function( Player : Player )
 
 		pastData[Player.UserId] = {
 
-			["Prefix"] = PrefixStorage[Player.UserId] or "!",
+			["Prefix"] = PrefixStorage[Player.UserId] or shared["Nebula Infinity V 3.0"].File:GetAttribute("Prefix") or "!" ,
 		}
 
 		return pastData
@@ -164,7 +171,7 @@ game:BindToClose(function( )
 
 			pastData[Player.UserId] = {
 
-				["Prefix"] = PrefixStorage[Player.UserId] or "!",
+				["Prefix"] = PrefixStorage[Player.UserId] or shared["Nebula Infinity V 3.0"].File:GetAttribute("Prefix") or "!",
 			}
 
 			return pastData
