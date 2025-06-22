@@ -94,7 +94,7 @@ function field:file( file : StyleSheet )
 		return false
 	end
 
-	local requiredItems = {"Tools", "Settings", "Command Handler"}
+	local requiredItems = {"Tools", "Settings", "Command Handler", "Ranks"}
 
 	for _, itemName in pairs(requiredItems) do
 		if not file:FindFirstChild(itemName) then
