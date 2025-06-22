@@ -32,7 +32,7 @@ end
 function Methods:ReturnValue( valueName : (any), player : Player )
 
 	local DataStoreService:DataStoreService = Services.DataStoreService
-	local DataStore:DataStore = DataStoreService:GetDataStore("Nebula Infinity | Third Edition")
+	local DataStore:DataStore = DataStoreService:GetDataStore("Nebula Infinity | Third Edition | Settings")
 	local returnedValue
 
 	DataStore:UpdateAsync(valueName, function(pastData)
@@ -43,10 +43,10 @@ function Methods:ReturnValue( valueName : (any), player : Player )
 		return pastData
 	end)
 
-if not returnedValue and valueName == "Topbar" then
-		returnedValue = "0.991, 0,0.984, 0"
+	if not returnedValue and valueName == "Notifications" then
+		returnedValue = "Bottom"
 else
-		returnedValue = "0.774, 0,0.247, 0"
+		returnedValue = "Top"
 end
 
 	return returnedValue 
