@@ -115,11 +115,14 @@ function Methods:Chatted(Player: Player, Message: string)
 				local Subjects = Formatter:ObtainPlayers(Player, args[2])
 
 				for i, foundPlayer in pairs(Players) do
-					
-					if Player:GetAttribute("RankId") <= foundPlayer then
-						warn(`{Player.Name} does not have permission to run {command.Name} on {foundPlayer.Name}` ) 
 
-						continue 
+					if foundPlayer ~= Player then
+
+						if Player:GetAttribute("RankId") <= foundPlayer:GetAttribute("RankId") then
+							warn(`{Player.Name} does not have permission to run {command.Name} on {foundPlayer.Name}` ) 
+
+							continue 
+						end
 					end
 
 					if table.find(command.Arguments, "Player") then
@@ -130,7 +133,7 @@ function Methods:Chatted(Player: Player, Message: string)
 						args[table.find(command.Arguments, "Subject")] = Subjects[i or 1]
 					end
 
-					command.Function(foundPlayer, args)
+					command.Function(Player, args)
 				end
 
 				-- Loopable commands
@@ -141,7 +144,7 @@ function Methods:Chatted(Player: Player, Message: string)
 
 						while task.wait(1) do
 							for _, foundPlayer in pairs(LoopPlayers) do
-								command.Function(foundPlayer, args)
+								command.Function(Player, args)
 							end
 						end
 					end)
@@ -160,15 +163,13 @@ function Methods:Chatted(Player: Player, Message: string)
 end
 
 function Methods:ObtainPrefix( Player : Player )
-	local Prefix = shared["Nebula Infinity V 3.0"].Client.PlayerInfo[Player.Name]:GetAttribute("Prefix") or "!"
+	local Prefix = shared["Nebula Infinity V 3.0"].Client.PlayerInfo[Player.Name]:GetAttribute("Prefix") or shared["Nebula Infinity V 3.0"].File:GetAttribute("Prefix") or "!"
 
 	Services.DataStoreService:GetDataStore("Nebula Infinity | Third Edition Prefixes"):UpdateAsync( "Prefixs", function( pastData )
 		if Prefix ~= pastData[Player.UserId] then
 			return
 		end
 	end)
-
-	-- Return prefix.
 
 	return Prefix
 end
@@ -193,15 +194,15 @@ local PreFunctions = coroutine.wrap(function( )
 
 	for _, command in pairs(require(script.Parent["CommandList | Server"])) do
 
-	--	if table.find(command, "PreFunction") then
+		--	if table.find(command, "PreFunction") then
 
-			-- All the servers pre functions will run.
+		-- All the servers pre functions will run.
 
-pcall(function()
+		pcall(function()
 			command.PreFunction()
-end)
+		end)
 
---end
+		--end
 	end
 
 end)()
@@ -217,11 +218,19 @@ shared["Nebula Infinity V 3.0"].Client.FunctionStorage:WaitForChild("GetCommands
 end
 
 shared["Nebula Infinity V 3.0"].Client.FunctionStorage.RunCommand.Main.OnServerInvoke = function( player, text )
+	if Debounces[`Command Bar | {player.UserId}`] == true then return end
+
+	Debounces[`Command Bar | {player.UserId}`] = true
+
 	local prefix = Methods:ObtainPrefix( player )
 
 	if not text:find(prefix) then text = prefix .. text end
 
 	Methods:Chatted( player, text )
+
+	task.delay(2, function()
+		Debounces[`Command Bar | {player.UserId}`] = false
+	end)
 end		
 
 -- Change file parents.
