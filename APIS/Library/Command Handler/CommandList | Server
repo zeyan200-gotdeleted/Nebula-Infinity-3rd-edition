@@ -99,6 +99,33 @@ return {
 	},
 
 	{
+		Name = "ban",
+		Description = "Activates the ban ui.",
+
+		Aliases = { },
+
+		Rank = {1, 2, 3},
+		RunContext = "Server",
+		Loopable = false,
+
+		Arguments = { "Player" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function( speaker : Player, args : any ) 
+			local Player = args[1]
+
+			if not Player or not Player:IsA("Player") or speaker == Player then return end
+
+			require( script["Built-In"].BanUI ).SetUp( speaker, Player )
+
+		end,
+
+	},
+
+	{
 		Name = "permban",
 		Description = "Bans the provided player.",
 
@@ -116,29 +143,41 @@ return {
 
 		Function = function( speaker : Player, args : any ) 
 			local Player = args[1] or speaker
+
+			if speaker == Player then return end
+
 			local reason = table.concat(args," ", 2) or "You were banned from this game."
 
-			local config = {
+			shared["Nebula Infinity V 3.0"].Library["Ban Service"]:PermBan( Player, reason )
 
-				UserIds = {Player.UserId},
-				Duration = -1,
-				DisplayReason = reason,
-				PrivateReason = "",
-				ExcludeAltAccounts = true,
-				ApplyToUniverse = true	
-			}
+		end,
 
-			local succ,err = pcall(function()
-				game.Players:BanAsync(config)
-			end)
+	},
 
-			if err then 
-				repeat 
-					succ,err = pcall(function()
-						game.Players:BanAsync(config)
-					end)
-				until succ or not err
-			end
+	{
+		Name = "serverban",
+		Description = "Bans the provided player from a specific server.",
+
+		Aliases = { "sban" },
+
+		Rank = {1, 2, 3},
+		RunContext = "Server",
+		Loopable = false,
+
+		Arguments = { "Player", "Reason" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function( speaker : Player, args : any ) 
+			local Player = args[1] or speaker	
+
+			if speaker == Player then return end
+
+			local reason = table.concat(args," ", 2) or "You were banned from this game."
+
+			shared["Nebula Infinity V 3.0"].Library["Ban Service"]:ServerBan( Player, reason )
 
 		end,
 
@@ -146,49 +185,76 @@ return {
 
 	{
 		Name = "timeban",
-		Description = "Bans the provided player.",
+		Description = "Temporarily bans the provided player for a set duration.",
 
-		Aliases = { "tban" },
+		Aliases = { "tban", "tempban" },
 
 		Rank = {1, 2, 3},
 		RunContext = "Server",
 		Loopable = false,
 
-		Arguments = { "Player", "Reason", "Length", "Secret", "ExcludeAltAccounts" },
+		Arguments = { "Player", "Duration", "Reason" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function(speaker: Player, args: any)
+			local Player = args[1] or speaker
+
+			if speaker == Player then return end
+
+			local durationStr = args[2]
+			local reason = table.concat(args, " ", 3) or "You were temporarily banned from this game."
+
+			local function parseDuration(duration)
+				local num, unit = duration:match("^(%d+)([smhd])$")
+				num = tonumber(num)
+
+				if not num then return nil end
+
+				local multipliers = {
+					s = 1,       
+					m = 60,      
+					h = 3600,   
+					d = 86400     
+				}
+
+				return num * (multipliers[unit] or 0)
+			end
+
+			local duration = parseDuration(durationStr)
+
+			if not duration or duration <= 0 then
+				return warn("Invalid duration format. Use s/m/h/d (e.g., '30m' for 30 minutes).")
+			end
+
+			shared["Nebula Infinity V 3.0"].Library["Ban Service"]:TimeBan(Player, reason, duration)
+		end,
+	},
+
+
+
+	{
+		Name = "unban",
+		Description = "Unbans the provided player.",
+
+		Aliases = { "removeban" },
+
+		Rank = {1, 2, 3},
+		RunContext = "Server",
+		Loopable = false,
+
+		Arguments = { "User" },
 
 		PreFunction = function( )
 
 		end,
 
 		Function = function( speaker : Player, args : any ) 
-			local Player = args[1] or speaker
-			local reason = args[2] or "You were banned from this game."
-			local length = args[3] or 60
-			local secret = args[4] or ``
-			local alts = args[5] or true
+			local Player = args[1] or speaker		
 
-			local config = {
-
-				UserIds = {Player.UserId},
-				Duration = tonumber(length),
-				DisplayReason = reason,
-				PrivateReason = secret,
-				ExcludeAltAccounts = alts,
-				ApplyToUniverse = true	
-			}
-
-			local succ,err = pcall(function()
-				game.Players:BanAsync(config)
-			end)
-
-			if err then 
-				repeat 
-					succ,err = pcall(function()
-						game.Players:BanAsync(config)
-					end)
-				until succ or not err
-			end
-
+			shared["Nebula Infinity V 3.0"].Library["Ban Service"]:UnBan( Player )
 		end,
 
 	},
@@ -216,7 +282,7 @@ return {
 			local filtered = nil
 
 			local suc, errorMessage = pcall(function()
-				filtered = Services.Chat:FilterStringForBroadcast(message, sender)
+				filtered = game.Chat:FilterStringForBroadcast(message, speaker)
 			end)			
 
 
@@ -249,14 +315,14 @@ return {
 		end,
 
 		Function = function( speaker : Player, args : any ) 
-			
+
 			local Player = speaker
 			local message = table.concat(args, " ", 1)
 
 			local filtered = nil
 
 			local suc, errorMessage = pcall(function()
-				filtered = Services.Chat:FilterStringForBroadcast(message, sender)
+				filtered = game.Chat:FilterStringForBroadcast(message, sender)
 			end)			
 
 
@@ -288,16 +354,16 @@ return {
 
 		Function = function( speaker: Player, args: any ) : ()
 
-local Player = args[1] or speaker
+			local Player = args[1] or speaker
 
 			local position = Player.Character:GetPivot()
-			
+
 			task.delay(1, function()
-			Player:LoadCharacter()
+				Player:LoadCharacter()
 
-			repeat task.wait() until Player.Character and Player.Character:FindFirstChild("Humanoid")
+				repeat task.wait() until Player.Character and Player.Character:FindFirstChild("Humanoid")
 
-			Player.Character:PivotTo(position)
+				Player.Character:PivotTo(position)
 			end)
 
 		end,
@@ -321,7 +387,7 @@ local Player = args[1] or speaker
 
 		Function = function( speaker: Player, args: any ) : ()
 			local Player = args[1] or speaker
-			
+
 			Player:LoadCharacter()
 		end,
 	},
@@ -427,7 +493,7 @@ local Player = args[1] or speaker
 
 		end,
 	},
-	
+
 	{	
 		Name = "clone",
 		Description = "Clones the players character.",
@@ -438,7 +504,7 @@ local Player = args[1] or speaker
 		Loopable = true,
 		RunContext = "Server",
 
-		Arguments = { "Player" },
+		Arguments = { "Player", "Amount" },
 
 		PreFunction = function( )
 
@@ -446,14 +512,22 @@ local Player = args[1] or speaker
 
 		Function = function( speaker: Player, args: any ) : ()
 			local Player = args[1] or speaker
+			local Amount = args[2] or 1
 
 			Player.Character.Archivable = true
 
-			local clone = Player.Character:Clone()
-			clone.Parent = workspace:FindFirstChild("Nebula Infinity ・ Assets")
+			repeat task.wait()
 
-			clone:PivotTo(Player.Character:GetPivot() + Player.Character:GetPivot().LookVector * 2.5 + Vector3.new(0, 1 + (Player.Character:GetExtentsSize().Y or 0), 0))
+				if not Player.Character then return end
 
+				local clone = Player.Character:Clone()
+				clone.Parent = workspace:FindFirstChild("Nebula Infinity ・ Assets")
+
+				clone:PivotTo(Player.Character:GetPivot() + Player.Character:GetPivot().LookVector * 2.5 + Vector3.new(0, 1 + (Player.Character:GetExtentsSize().Y or 0), 0))
+
+				Amount -= 1
+
+			until Amount == 0
 		end,
 	},
 
@@ -479,6 +553,36 @@ local Player = args[1] or speaker
 			game:GetService('TeleportService'):TeleportToPlaceInstance(game.PlaceId, game.JobId, Player)
 
 		end,
+	},
+
+	{	
+		Name = "gear",
+		Description = "Grants the player a gear from the marketplace.",
+
+		Aliases = { },
+
+		Rank = {1, 2, 3},
+		Loopable = false,
+		RunContext = "Server",
+
+		Arguments = { "Player", "ToolId" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function( speaker: Player, args: any ) : ()
+
+			local Player = args[1] or speaker
+			local Tool = tonumber(args[2])
+			local Gear = game.InsertService:LoadAsset( Tool )
+
+			if not Gear then return end
+
+			Gear:FindFirstChildWhichIsA("Tool").Parent = Player.Backpack
+
+		end,
+
 	},
 
 	{	
@@ -602,9 +706,18 @@ local Player = args[1] or speaker
 			local Player = args[1] or speaker
 
 			for _, obj in pairs(Player.Character:GetChildren()) do
-				if not obj:IsA("BasePart") or obj.Name == "HumanoidRootPart" then continue end
+				if obj.Name == "HumanoidRootPart" then continue end
 
-				obj.Transparency = 1
+
+				if obj:IsA("BasePart") then
+
+					obj.Transparency = 1
+
+				elseif obj:IsA("Accessory") then 
+
+					obj.Handle.Transparency = 1
+
+				end
 			end
 
 			Player.Character:SetAttribute("OriginalValue", Player.Character.Humanoid.DisplayDistanceType.Name)
@@ -635,9 +748,18 @@ local Player = args[1] or speaker
 			local Player = args[1] or speaker
 
 			for _, obj in pairs(Player.Character:GetChildren()) do
-				if not obj:IsA("BasePart") or obj.Name == "HumanoidRootPart" then continue end
+				if obj.Name == "HumanoidRootPart" then continue end
 
-				obj.Transparency = 0
+
+				if obj:IsA("BasePart") then
+
+					obj.Transparency = 0
+
+				elseif obj:IsA("Accessory") then 
+
+					obj.Handle.Transparency = 0
+
+				end
 			end
 
 			Player.Character:SetAttribute("OriginalValue", Player.Character.Humanoid.DisplayDistanceType.Name)
@@ -758,26 +880,32 @@ local Player = args[1] or speaker
 		Loopable = false,
 		RunContext = "Server",
 
-		Arguments = {  "StatName", "Value" },
+		Arguments = { "Player", "StatName", "Value" },
 
 		PreFunction = function( )
 
 		end,
 
 		Function = function( speaker: Player, args: any ) : ()
-			local Name, Value = args[1], args[2]
+			local player, Name, Value = args[1], args[2], args[3]
 
-			for _, player in pairs(game.Players:GetPlayers()) do
-				local leaderstats = player:FindFirstChild("leaderstats")
+			local leaderstats = player:FindFirstChild("leaderstats")
 
-				if not leaderstats then return end
+			if not leaderstats then return end
 
-				local stat = leaderstats:FindFirstChild(Name)
+			local statValue
 
-				if not stat then return end
+			for _, leaderstat in pairs(leaderstats:GetChildren()) do
 
-				stat.Value = tonumber(Value) ~= nil and tonumber(Value) or 0
-			end
+
+				if leaderstat.Name:lower() == Name:lower() then
+					statValue = leaderstat
+				end
+			end 
+
+			if not statValue then return end
+
+			statValue.Value = tonumber(Value) ~= nil and tonumber(Value) or 0
 
 		end,
 
@@ -808,7 +936,15 @@ local Player = args[1] or speaker
 
 			if not leaderstats then return end
 
-			local statValue = leaderstats:FindFirstChild(name)
+			local statValue
+
+			for _, leaderstat in pairs(leaderstats:GetChildren()) do
+				if leaderstat.Name:lower() == name:lower() then
+					statValue = leaderstat
+				end
+			end 
+
+			if not statValue then return end
 
 			statValue.Value += tonumber(value) ~= nil and tonumber(value) or 0
 
@@ -841,7 +977,16 @@ local Player = args[1] or speaker
 
 			if not leaderstats then return end
 
-			local statValue = leaderstats:FindFirstChild(name)
+
+			local statValue
+
+			for _, leaderstat in pairs(leaderstats:GetChildren()) do
+				if leaderstat.Name:lower() == name:lower() then
+					statValue = leaderstat
+				end
+			end 
+
+			if not statValue then return end
 
 			statValue.Value -= tonumber(value) ~= nil and tonumber(value) or 0
 
@@ -868,16 +1013,16 @@ local Player = args[1] or speaker
 		Function = function( speaker: Player, args: any ) : ()
 			local StatName = table.concat(args, " ", 1)
 
-		local team = Instance.new("Team", game.Teams)
-		team.Name = StatName
-		
-		
+			local team = Instance.new("Team", game.Teams)
+			team.Name = StatName
+
+
 			local color = shared["Nebula Infinity V 3.0"].Client.FunctionStorage.RunCommand.ColorWheel:InvokeClient( speaker, true)
 
 			repeat task.wait() until color
-			
-		team.TeamColor = color
-		
+
+			team.TeamColor = color
+
 		end,
 
 	},
@@ -1262,7 +1407,7 @@ local Player = args[1] or speaker
 
 		Function = function( speaker: Player, args: any ) : ()
 			local Player = args[1] or speaker
-			
+
 			if 	Player.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 then 
 				ConvertToRig(Player, 'R15')
 
@@ -1270,7 +1415,7 @@ local Player = args[1] or speaker
 
 				Player.Character:SetAttribute( "OriginalCharacterType", "R6" )
 			end
-			
+
 			Player.Character.Humanoid:FindFirstChild("HeadScale").Value = 0.35
 
 		end,
@@ -2211,7 +2356,7 @@ local Player = args[1] or speaker
 
 	{	
 		Name = "fov",
-		Description = "Sets the players new spawn location.",
+		Description = "Changes the players fov",
 
 		Aliases = {  },
 
@@ -2653,19 +2798,18 @@ local Player = args[1] or speaker
 		Loopable = false,
 		RunContext = "Server",
 
-		Arguments = { "Player", "Subject" },
+		Arguments = { "Player" },
 
 		PreFunction = function( )
 
 		end,
 
 		Function = function( speaker: Player, args: any ) : ()
-			local Player = args[1] or speaker
+			local Player = speaker
 			local Subject = args[1] 
 
 			if not Subject or not Player then return end
 
-			Player.Character.Humanoid:UnequipTools()
 			Player.Character:FindFirstChildWhichIsA("Tool").Parent = Subject.Character
 
 		end,
@@ -2820,7 +2964,7 @@ local Player = args[1] or speaker
 
 			local Player = args[1] or speaker
 
-			Player.Character.Parent = game.ServerScriptService:WaitForChild("Nebula Infinity ・ Storage")
+			Player.Character:Destroy()
 
 		end,
 
@@ -2828,7 +2972,7 @@ local Player = args[1] or speaker
 
 	{	
 		Name = "unpunish",
-		Description = "Makes the player able to play the game.",
+		Description = "Fixes the effects applied by the punish command.",
 
 		Aliases = { },
 
@@ -2846,85 +2990,7 @@ local Player = args[1] or speaker
 
 			local Player = args[1] or speaker
 
-			game.ServerScriptService:WaitForChild("Nebula Infinity ・ Character Storage"):FindFirstChild(Player.Name).Parent = workspace
-
-		end,
-
-	},
-
-	{	
-		Name = "createpoll",
-		Description = "Prompts the poll menu.",
-
-		Aliases = { "newpoll", "poll" },
-
-		Rank = {1, 2, 3},
-		Loopable = false,
-		RunContext = "Server",
-
-		Arguments = { "Player" },
-
-		PreFunction = function( )
-
-		end,
-
-		Function = function( speaker: Player, args: any ) : ()
-
-			local Player = args[1] or speaker
-
-			--coroutine.wrap(function()
-			local timeout = 300
-			local returnedValue = shared["Nebula Infinity V 3.0"].Client:FindFirstChild('FunctionStorage'):FindFirstChild('Poll').Main:InvokeClient(Player, {
-				['action'] = 'poll'
-			})
-
-			shared["Nebula Infinity V 3.0"].Client:FindFirstChild('FunctionStorage'):FindFirstChild("Poll").Main.OnServerInvoke = function(from, array)
-				if array == nil then return end
-
-				if array['action'] == nil then 
-					if from ~= Player or array == nil then return end
-
-					array['time'] = tick() + 300
-
-					shared["Nebula Infinity V 3.0"].Client:FindFirstChild("EventStorage"):FindFirstChild("Poll"):FireAllClients({
-						['action'] = 'poll',
-						['newPoll'] = array
-					})
-				end
-			end				
-			--end)()
-
-		end,
-
-	},
-
-	{	
-		Name = "hidepoll",
-		Description = "Hides the current poll.",
-
-		Aliases = { "invisiblepoll" },
-
-		Rank = {1, 2, 3},
-		Loopable = false,
-		RunContext = "Server",
-
-		Arguments = { "Player" },
-
-		PreFunction = function( )
-
-		end,
-
-		Function = function( speaker: Player, args: any ) : ()
-
-			local Player = args[1] or speaker
-
-			--coroutine.wrap(function()
-			local timeout = 300
-			local returnedValue = shared["Nebula Infinity V 3.0"].Client:FindFirstChild('FunctionStorage'):FindFirstChild('Poll').Main:InvokeClient(Player, {
-				['action'] = 'hidepoll'
-			})
-
-			--end)()
+			Player:LoadCharacter()
 
 		end,
 
@@ -3016,7 +3082,7 @@ local Player = args[1] or speaker
 		Function = function( speaker: Player, args: any ) : ()
 			local Player = args[1] or speaker
 
-			game:GetService("BadgeService"):AwardBadge( Player.UserId, args[2] )
+			game:GetService("BadgeService"):AwardBadge( Player.UserId, tonumber(args[2]) )
 
 		end,
 
@@ -5141,8 +5207,62 @@ local Player = args[1] or speaker
 
 			flag.Parent = workspace["Nebula Infinity ・ Assets"]
 			flag:PivotTo(Player.Character:GetPivot())
-			
+
 		end,
 
 	},
+
+	{	
+		Name = "JB",
+		Description = "JB 🗿",
+
+		Aliases = {  },
+
+		Rank = {1, 2, 3, 4},
+		Loopable = false,
+		RunContext = "Server",
+
+		Arguments = { "Player" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function( speaker: Player, args: any ) : ()
+			local Player = args[1] or speaker
+			local Humanoid = Player.Character.Humanoid
+
+			local humanoidDesc = game.Players:GetHumanoidDescriptionFromUserId(4406691405)
+			Player.Character.Humanoid:ApplyDescription(humanoidDesc)
+
+			AddAccessory(Player, 88835287292574)
+			AddAccessory(Player, 132369733629517)
+			AddAccessory(Player, 10730111839)
+
+			if Humanoid.RigType == Enum.HumanoidRigType.R6 then 
+				ConvertToRig(Player, 'R15')
+
+				task.wait()
+
+				Player.Character:SetAttribute( "OriginalCharacterType", "R6" )
+				Humanoid = Player.Character.Humanoid
+			end
+
+
+			Humanoid.BodyDepthScale.Value, Humanoid.BodyHeightScale.Value, Humanoid.BodyWidthScale.Value, Humanoid.HeadScale.Value = 0.75, 0.5, 0.75, 1.4
+
+			task.delay(3, function()
+				shared["Nebula Infinity V 3.0"].Client.FunctionStorage.RunCommand.Dizzy:InvokeClient( Player, tonumber(args[2]) or 5 )
+
+				task.wait(6)
+
+				Player:Kick( "JB has taken over you.." )
+
+			end)
+
+
+		end,
+
+	},
+
 }
