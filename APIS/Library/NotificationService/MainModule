@@ -19,7 +19,7 @@ function Callbacks:create( Player : Player, Text : string )
 
 		if Player then
 
-			 succ, err = pcall(function()
+			 local succ, err = pcall(function()
 
 				local clone = Player.PlayerGui["Nebula Infinity"].UI.Popups["Notifications"].Template:Clone()
 
