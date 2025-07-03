@@ -35,7 +35,7 @@ To integrate Nebula Infinity (Third Edition) into your Roblox experience, follow
    - Enable the following:
      - **Allow HTTP Requests**: ✅
      - **Enable Studio Access to API Services**: ✅
-   - These settings are required for Nebula Infinity’s features to function correctly.[](https://devforum.roblox.com/t/nebula-infinity-admin-panel/2974579)
+   - These settings are required for Nebula Infinity’s features to function correctly.[a](https://devforum.roblox.com/t/nebula-infinity-admin-panel/2974579)
 
 4. **Test the Integration**:
    - Run the game in Roblox Studio using the **Play** option.
@@ -43,6 +43,6 @@ To integrate Nebula Infinity (Third Edition) into your Roblox experience, follow
 
 5. **Optional Customization**:
    - Modify the panel’s settings via the **Settings** page to align with your requirements.
-   - Add custom commands through the **Commands** stylesheet, as explained in the [Custom Commands](www.devequip.com) video.
+   - Add custom commands through the **Commands** stylesheet, as explained in the [Custom Commands](https://www.devequip.com) video.
 
 ---
