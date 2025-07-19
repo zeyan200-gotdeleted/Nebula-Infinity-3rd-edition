@@ -43,6 +43,9 @@ To integrate Nebula Infinity (Third Edition) into your Roblox experience, follow
 
 5. **Optional Customization**:
    - Modify the panel’s settings via the **Settings** page to align with your requirements.
-   - Add custom commands through the **Commands** stylesheet, as explained in the [Custom Commands](https://www.youtube.com) video.
+   - Add custom commands through the **Command Handler** stylesheet.
 
 ---
+
+
+
