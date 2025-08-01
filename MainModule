@@ -27,6 +27,7 @@ return function( file : StyleSheet )
 		shared["Nebula Infinity V 3.0"].Services = require( script.APIs.Services )		
 		shared["Nebula Infinity V 3.0"].Library = require( script.APIs.Library )  
 		shared["Nebula Infinity V 3.0"].Plugins = require( script.Framework.PluginsHandler ).__int( file )
+		
 	end
 
 end
