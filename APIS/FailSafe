@@ -103,7 +103,7 @@ function field:file( file : StyleSheet )
 	end
 
 	for _, obj in pairs(file:GetChildren()) do
-		if not table.find(requiredItems, obj.Name) and obj.Name ~= "ThumbnailCamera" then
+		if not table.find(requiredItems, obj.Name) and obj.Name ~= "ThumbnailCamera" and obj.Name ~= "READ ME" then
 			return false
 		end
 	end
