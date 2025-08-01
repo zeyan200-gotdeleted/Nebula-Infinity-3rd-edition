@@ -13,6 +13,7 @@ local Libary =  {
 	["Data"] = require(script.Data.MainModule),
 	["EventsHandler"] = require(script.EventsHandler.MainModule),
 	["Ban Service"] = require(script["Ban Handler"].MainModule),
+	["Warning Service"] = require(script["Warning Handler"].MainModule),
 
 }
 
