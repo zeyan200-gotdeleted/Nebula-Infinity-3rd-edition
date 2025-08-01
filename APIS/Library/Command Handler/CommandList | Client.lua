@@ -99,7 +99,7 @@ return {
 		Name = "panel",
 		Description = "Opens the panels main gui.",
 
-		Aliases = {  },
+		Aliases = { 'p' },
 
 		Rank = {1, 2, 3, 4, 5},
 		RunContext = "Client",
@@ -121,7 +121,7 @@ return {
 		Name = "dashboard",
 		Description = "Loads the dashboard page.",
 
-		Aliases = {  },
+		Aliases = { 'db' },
 
 		Rank = {1, 2, 3, 4, 5},
 		RunContext = "Client",
@@ -134,9 +134,13 @@ return {
 		end,
 
 		Function = function( speaker : Player, args : any ) 
-
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+				
+			   shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+			   
+			end
+			
 			shared["Nebula Infinity V 3.0"].Navigation:__ChangePage( "Dashboard", true )
-			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
 		end,
 
 	},
@@ -145,7 +149,7 @@ return {
 		Name = "settings",
 		Description = "Loads the settings page.",
 
-		Aliases = {  },
+		Aliases = { 'sg' },
 
 		Rank = {1, 2, 3, 4, 5},
 		RunContext = "Client",
@@ -159,8 +163,13 @@ return {
 
 		Function = function( speaker : Player, args : any ) 
 
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+
+				shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			end
+
 			shared["Nebula Infinity V 3.0"].Navigation:__ChangePage( "Settings", true )
-			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
 		end,
 
 	},
@@ -169,7 +178,7 @@ return {
 		Name = "commands",
 		Description = "Loads the commands page.",
 
-		Aliases = {  },
+		Aliases = { 'cmds', 'cm', 'cd' },
 
 		Rank = {1, 2, 3, 4, 5},
 		RunContext = "Client",
@@ -183,8 +192,13 @@ return {
 
 		Function = function( speaker : Player, args : any ) 
 
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+
+				shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			end
+
 			shared["Nebula Infinity V 3.0"].Navigation:__ChangePage( "Commands", true )
-			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
 		end,
 
 	},
@@ -193,7 +207,7 @@ return {
 		Name = "Logs",
 		Description = "Loads the Logs page.",
 
-		Aliases = {  },
+		Aliases = { 'Lg' },
 
 		Rank = {1, 2, 3},
 		RunContext = "Client",
@@ -207,8 +221,13 @@ return {
 
 		Function = function( speaker : Player, args : any ) 
 
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+
+				shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			end
+
 			shared["Nebula Infinity V 3.0"].Navigation:__ChangePage( "Logs", true )
-			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
 		end,
 
 	},
@@ -217,7 +236,7 @@ return {
 		Name = "Manager",
 		Description = "Loads the Manager page.",
 
-		Aliases = {  },
+		Aliases = { 'Mr' },
 
 		Rank = {1, 2, 3, 4, 5},
 		RunContext = "Client",
@@ -231,8 +250,13 @@ return {
 
 		Function = function( speaker : Player, args : any ) 
 
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+
+				shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			end
+
 			shared["Nebula Infinity V 3.0"].Navigation:__ChangePage( "Manager", true )
-			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
 		end,
 
 	},
@@ -241,7 +265,7 @@ return {
 		Name = "Plugins",
 		Description = "Loads the Plugins page.",
 
-		Aliases = {  },
+		Aliases = { 'Ps' },
 
 		Rank = {1, 2, 3, 4},
 		RunContext = "Client",
@@ -255,8 +279,42 @@ return {
 
 		Function = function( speaker : Player, args : any ) 
 
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+
+				shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			end
+
 			shared["Nebula Infinity V 3.0"].Navigation:__ChangePage( "Plugins", true )
-			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+		end,
+
+	},
+
+	{
+		Name = "AdminProflile",
+		Description = "Loads the Admin Profiles page.",
+
+		Aliases = { 'ap' },
+
+		Rank = {1, 2, 3, 4},
+		RunContext = "Client",
+		Loopable = false,
+
+		Arguments = { },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function( speaker : Player, args : any ) 
+
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+
+				shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			end
+
+			shared["Nebula Infinity V 3.0"].Navigation:__ChangePage( "AdminProfile", true )
 		end,
 
 	},
@@ -265,7 +323,7 @@ return {
 		Name = "Credits",
 		Description = "Loads the Credits popup.",
 
-		Aliases = {  },
+		Aliases = { 'creds' },
 
 		Rank = {1, 2, 3, 4},
 		RunContext = "Client",
@@ -278,7 +336,12 @@ return {
 		end,
 
 		Function = function( speaker : Player, args : any ) 
-			shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			if shared["Nebula Infinity V 3.0"].UI.Panel.Visible == false then
+
+				shared["Nebula Infinity V 3.0"].Navigation.__Toggle( true )
+
+			end
 
 			shared["Nebula Infinity V 3.0"].Events.Popup:Fire("Credits")
 
