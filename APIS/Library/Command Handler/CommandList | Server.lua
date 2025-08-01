@@ -233,7 +233,80 @@ return {
 		end,
 	},
 
+	{
+		Name = "warn",
+		Description = "Gives the provided user a warning.",
 
+		Aliases = { "w" },
+
+		Rank = {1, 2, 3},
+		RunContext = "Server",
+		Loopable = false,
+
+		Arguments = { "Player", "Reason" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function(speaker: Player, args: any)
+			local Player = args[1] or speaker
+			local Reason = args[2]
+			
+
+			shared["Nebula Infinity V 3.0"].Library["Warning Service"]:Warn( Player, Reason , speaker)
+		end,
+	},
+
+	{
+		Name = "viewwarnings",
+		Description = "View the provided user a warnings",
+
+		Aliases = { "vw" },
+
+		Rank = {1, 2, 3},
+		RunContext = "Server",
+		Loopable = false,
+
+		Arguments = { "Player", "Reason" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function(speaker: Player, args: any)
+			local Player = args[1] or speaker
+
+			shared["Nebula Infinity V 3.0"].Client.FunctionStorage.Warnings.Main:InvokeClient( speaker, Player )
+
+		
+		end,
+	},
+
+	{
+		Name = "clearallwarnings",
+		Description = "Clear the provided user of all warnings",
+
+		Aliases = { "cw" },
+
+		Rank = {1, 2, 3},
+		RunContext = "Server",
+		Loopable = false,
+
+		Arguments = { "Player", "Reason" },
+
+		PreFunction = function( )
+
+		end,
+
+		Function = function(speaker: Player, args: any)
+			local Player = args[1] or speaker
+
+if Player == speaker then return error( `You cannot clear your own warnings!` ) end 
+
+			shared["Nebula Infinity V 3.0"].Library["Warning Service"]:ClearAllWarnings( Player )
+		end,
+	},
 
 	{
 		Name = "unban",
@@ -322,7 +395,7 @@ return {
 			local filtered = nil
 
 			local suc, errorMessage = pcall(function()
-				filtered = game.Chat:FilterStringForBroadcast(message, sender)
+				filtered = game.Chat:FilterStringForBroadcast(message, speaker)
 			end)			
 
 
@@ -516,15 +589,30 @@ return {
 
 			Player.Character.Archivable = true
 
+			if tonumber(Amount) >= 15 then return error('You can only have 15 active clones.') end
+
 			repeat task.wait()
 
 				if not Player.Character then return end
 
+local Clones = {}
+				local CurrentClones = 0
+
+				for _, obj in pairs(workspace:FindFirstChild("Nebula Infinity ・ Assets"):GetChildren()) do
+					if obj:GetAttribute('Owner') == Player.Name then
+
+table.insert(Clones, obj)
+						CurrentClones += 1
+					end
+				end
+				
+				if CurrentClones >= 15 then Clones[15]:Destroy() end
+				
 				local clone = Player.Character:Clone()
 				clone.Parent = workspace:FindFirstChild("Nebula Infinity ・ Assets")
 
+clone:SetAttribute('Owner', Player.Name)
 				clone:PivotTo(Player.Character:GetPivot() + Player.Character:GetPivot().LookVector * 2.5 + Vector3.new(0, 1 + (Player.Character:GetExtentsSize().Y or 0), 0))
-
 				Amount -= 1
 
 			until Amount == 0
