@@ -1,41 +1,53 @@
--- @ | Services
+--@strict
+local CoreTypes = require(script.Loader.CoreTypes)
+local PluginsManager = require(script.Loader.MainModule)
 
-local Services = shared["Nebula Infinity V 3.0"].Services
+local Core = {}
+Core.__index = Core
 
--- @ | Variables
-
-local Callbacks, Methods, Debounces = {}, {}, {}
-local Meta = setmetatable({}, Callbacks)
-
-Callbacks.__index, Methods.__index = Callbacks, Methods
-
--- @ | Methods
-
-
--- @ | Callbacks
-
-function Callbacks.__int( file : StyleSheet )
-	local self = setmetatable({}, Callbacks)
+function Core.new(file: Instance): CoreTypes.Core
+	local self = setmetatable({}, Core)
 
 	self.File = file
+	self.Client = game.ReplicatedStorage:WaitForChild("Nebula Infinity | Client")
+	self.Logger = require(script.Parent.Parent.APIs.Library.Logger.MainModule)
+	self.Notifications = require(script.Parent.Parent.APIs.Library.Notification.MainModule)
+	self.Server = require(script.Parent.Parent.APIs.Library.Server.MainModule)
+	self.Data = require(script.Parent.Parent.APIs.Library.Data.MainModule)
+	self.BanHandler = require(script.Parent.Parent.APIs.Library[`Ban Handler`].MainModule)
+	self.WarningHandler = require(script.Parent.Parent.APIs.Library[`Warning Handler`].MainModule)
 
-	self.ProtectedRun = function( thread )
-		local succ, err = pcall(function( )
-
-			thread( )
-
-		end)		
+	self.ProtectedRun = function(thread)
+		local success, err = pcall(thread)
+		if not success then
+			warn("[Core Protected Run Error]:", err)
+		end
 	end
 
-	self["Nebula Infinity | Client"] = game.ReplicatedStorage:WaitForChild( "Nebula Infinity | Client" )
-	self.AdminCount = function( ) return self["Nebula Infinity | Client"].Extras.AdminCount.Value end
+	function self:AdminCount()
+		return self.Client.Extras.AdminCount.Value
+	end
 
-	self.Logger = require( script.Parent.Parent.APIs.Library.Logger.MainModule )
-	self.Notifications = require( script.Parent.Parent.APIs.Library.Notification.MainModule )
+	self.PluginsManager = PluginsManager.new(self)
 
-	require( script.Loader.MainModule )
+	shared["Nebula Infinity V 3.0"].Client.FunctionStorage.RequestPlugins.Main.OnServerInvoke = function()
+		local tb = {}
+		for _, Plugin in pairs(script.Loader.MainModule.Plugins:GetChildren()) do
+			tb[Plugin.Name] = {
+				Icon = Plugin.Config.Icon:GetAttribute("ImageId"),
+				Name = Plugin.Name,
+				Description = Plugin.Config.Description:GetAttribute("Description"),
+				Creator = Plugin.Config.Creator:GetAttribute("Creator"),
+			}
+		end
+		return tb
+	end
+
+	shared["Nebula Infinity V 3.0"].Client.FunctionStorage.InstallPlugin.Main.OnServerInvoke = function(Player, PluginName)
+		self.PluginsManager:InstallPlugin(Player, PluginName)
+	end
 
 	return self
 end
 
-return Meta
+return Core
