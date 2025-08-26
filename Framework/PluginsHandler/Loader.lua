@@ -1,95 +1,89 @@
--- @ | Services
+--@strict
+local PluginTypes = require(script.Parent.PluginTypes)
+local CoreTypes = require(script.Parent.CoreTypes)
 
-local Services = shared["Nebula Infinity V 3.0"].Services
+local PluginsManager = {}
+PluginsManager.__index = PluginsManager
 
--- @ | Variables
+function PluginsManager.new(core: CoreTypes.Core)
+	local self = setmetatable({}, PluginsManager)
+	self.Core = core
+	self.Plugins = {}
 
-local DataStoreService = Services.DataStoreService
-local DataStore = DataStoreService:GetDataStore( "Plugins" )
-local Plugins = {}
+	local DataStoreService = game:GetService("DataStoreService")
+	self.Store = DataStoreService:GetDataStore("Nebula_Plugins_V2")
 
-local Callbacks, Methods , Debounces = {}, {}, {}
-local Meta = setmetatable({}, Callbacks)
+	game.Players.PlayerAdded:Connect(function(player)
+		self:LoadInstalledPlugins(player)
+	end)
 
-Callbacks.__index, Methods.__index = Callbacks, Methods
+	for _, player in ipairs(game.Players:GetPlayers()) do
+		self:LoadInstalledPlugins(player)
+	end
 
--- @ | Methods
+	game:BindToClose(function()
+		for _, player in pairs(game.Players:GetPlayers()) do
+			self:SavePlugins(player)
+		end
+	end)
 
-function Methods:LoadInstalledPlugins( Player : Player )
+	return self
+end
 
-	DataStore:UpdateAsync( Player.UserId, function( pastData : (any) ) 
-		pastData = pastData or {}
+function PluginsManager:LoadInstalledPlugins(player: Player)
+	local userId = player.UserId
+	local success, pastData = pcall(function()
+		return self.Store:GetAsync(userId)
+	end)
+	if not success then pastData = {} end
 
-		Plugins[Player.UserId] = pastData
+	self.Plugins[userId] = pastData or {}
 
-		return pastData
-	end)	
-
-	for _, Plugin in pairs( script.Plugins:GetChildren() ) do
-		if Plugins[ Player.UserId ][ Plugin.Name ] then
-			Callbacks:LoadPlugin( Plugin, Player )
+	for _, Plugin in ipairs(script.Plugins:GetChildren()) do
+		if self.Plugins[userId][Plugin.Name] then
+			self:LoadPlugin(Plugin, player)
 		end
 	end
-
 end
 
--- @ | Callbacks
+function PluginsManager:SavePlugins(player: Player)
+	local userId = player.UserId
+	local data = self.Plugins[userId] or {}
 
-function Callbacks:LoadPlugin( Plugin : StyleSheet, Player )
+	local success, err = pcall(function()
+		self.Store:UpdateAsync(userId, function(PastData)
+			return data
+		end)
+	end)
+	if not success then
+		warn("Failed to save plugins for", player.Name, ": ", err)
+	end
+end
 
-	if Plugin:FindFirstChild("MainModule") then
-		require(Plugin:FindFirstChild("MainModule")):__init( self, Player )
+function PluginsManager:InstallPlugin(player: Player, PluginName: string)
+	local userId = player.UserId
+	self.Plugins[userId] = self.Plugins[userId] or {}
+	self.Plugins[userId][PluginName] = true
+	self:SavePlugins(player)
+
+	local Plugin = script.Plugins:FindFirstChild(PluginName)
+	if Plugin then
+		self:LoadPlugin(Plugin, player)
+	end
+end
+
+function PluginsManager:LoadPlugin(Plugin: ModuleScript, player: Player)
+	if not Plugin:FindFirstChild("MainModule") then
+		warn("No MainModule found for Plugin:", Plugin.Name)
+		return
 	end
 
-end
-
--- @ | RBX Signals
-
-shared["Nebula Infinity V 3.0"].Client.FunctionStorage.InstallPlugin.Main.OnServerInvoke = function( player, PluginName )
-	DataStore:UpdateAsync( player.UserId, function( pastData : (any) ) 
-		pastData = pastData or {}
-
-		pastData[PluginName] = true
-
-		return pastData
-	end)	
-
-	Callbacks:LoadPlugin( script.Plugins:FindFirstChild( PluginName ), player )
-end
-
-shared["Nebula Infinity V 3.0"].Client.FunctionStorage.RequestPlugins.Main.OnServerInvoke = function(  )	
-	local tb = {}
-
-	for _, Plugin in pairs(script.Plugins:GetChildren()) do
-		tb[Plugin.Name] = {
-
-			["Icon"] = Plugin.Config.Icon:GetAttribute( "ImageId" ),
-			["Name"] = Plugin.Name,
-			["Description"] = Plugin.Config.Description:GetAttribute( "Description" ),
-			["Creator"] = Plugin.Config.Creator:GetAttribute( "Creator" ),
-
-		}
+	local success, mod: PluginTypes.PluginModule = pcall(require, Plugin.MainModule)
+	if success and mod.__init then
+		mod:__init(self.Core, player)
+	else
+		warn("Failed to require Plugin:", Plugin.Name, mod)
 	end
-
-	return tb
 end
 
-game:BindToClose(function()
-	for _, player in pairs(game.Players:GetPlayers()) do
-		DataStore:UpdateAsync( player.UserId, function( pastData : (any) ) 
-			pastData = pastData or {}
-
-			pastData = Plugins[player.UserId]
-
-			return pastData
-		end)	
-	end
-end)	
-
-game.Players.PlayerAdded:Connect(function( Player )
-	Methods:LoadInstalledPlugins( Player )
-end)
-
-for _, player in pairs(game.Players:GetPlayers()) do Methods:LoadInstalledPlugins( player ) end
-
-return Meta
+return PluginsManager
