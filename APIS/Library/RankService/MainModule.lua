@@ -94,6 +94,11 @@ warn(Preset)
 			UI.Config.Main.Enabled = true
 			shared["Nebula Infinity V 3.0"].Client.Extras.AdminCount.Value += 1
 
+			
+			if not require(game:GetService("ServerScriptService")["Nebula Infinity 3rd Edition"].Settings).Customs.Interactable  then
+				UI.Config.Main.MainModule.Events.Interactable:FireClient( player )
+			end
+			
 			Methods:UpdateRanked(rankName,Preset["Id"], player)
 
 			task.delay(2.5, function()
