@@ -116,7 +116,7 @@ function Methods:Chatted(Player: Player, Message: string)
 
 				for i, foundPlayer in pairs(Players) do
 
-					if foundPlayer ~= Player then
+					if foundPlayer ~= Player and foundPlayer ~= nil and foundPlayer:GetAttribute("RankId") then -- this line hasn't been updated to the actual file yet. 
 
 						if Player:GetAttribute("RankId") <= foundPlayer:GetAttribute("RankId") then
 							warn(`{Player.Name} does not have permission to run {command.Name} on {foundPlayer.Name}` ) 
